@@ -26,13 +26,16 @@ anos = sorted(df["ano"].unique())
 st.title("Painel de Consumo de Energia e Potencial de Energia Solar")
 
 # Filtros
-estado_selecionado = st.selectbox("Selecione o Estado", estados)
-municipios_estado = sorted(df[df["estado"] == estado_selecionado]["municipio"].unique())
-municipios_estado.insert(0, "TODOS")
-municipio_selecionado = st.selectbox("Selecione o Município", municipios_estado)
-categoria_selecionada = st.selectbox("Categoria de Atividade", ["TODOS"] + categorias)
-fonte_selecionada = st.selectbox("Fonte Energética", ["TODOS"] + fontes)
-ano_selecionado = st.selectbox("Ano", ["TODOS"] + [str(a) for a in anos])
+with st.container():
+    st.markdown("### 🔍 Filtros de Análise")
+    st.markdown("---")
+    estado_selecionado = st.selectbox("Selecione o Estado", estados)
+    municipios_estado = sorted(df[df["estado"] == estado_selecionado]["municipio"].unique())
+    municipios_estado.insert(0, "TODOS")
+    municipio_selecionado = st.selectbox("Selecione o Município", municipios_estado)
+    categoria_selecionada = st.selectbox("Categoria de Atividade", ["TODOS"] + categorias)
+    fonte_selecionada = st.selectbox("Fonte Energética", ["TODOS"] + fontes)
+    ano_selecionado = st.selectbox("Ano", ["TODOS"] + [str(a) for a in anos])
 
 # Aplicar filtros
 df_filtrado = df[df["estado"] == estado_selecionado].copy()
@@ -45,9 +48,11 @@ if fonte_selecionada != "TODOS":
 if ano_selecionado != "TODOS":
     df_filtrado = df_filtrado[df_filtrado["ano"] == int(ano_selecionado)]
 
-st.subheader("Tabela de Dados Filtrados")
-st.markdown("Visualize abaixo os registros de consumo energético conforme os filtros aplicados. Cada linha representa um registro de consumo de energia por município, categoria de atividade e tipo de fonte energética.")
-st.dataframe(df_filtrado)
+# Tabela
+with st.container():
+    st.subheader("📋 Tabela de Dados Filtrados")
+    st.markdown("Cada linha representa um registro de consumo de energia por município, categoria de atividade e tipo de fonte energética.")
+    st.dataframe(df_filtrado, use_container_width=True)
 
 if not df_filtrado.empty:
     consumo_total = df_filtrado["energia (TJ)"].sum()
@@ -57,42 +62,34 @@ if not df_filtrado.empty:
     max_consumo = df_filtrado["energia (TJ)"].max()
     min_consumo = df_filtrado["energia (TJ)"].min()
 
-    st.subheader("Resumo Estatístico")
-    st.markdown("Essa seção resume os principais números relacionados ao consumo de energia e emissão de CO₂ com base nos filtros escolhidos. Esses dados ajudam a entender o nível atual de dependência energética e o impacto ambiental gerado.")
+    st.subheader("📊 Resumo Estatístico")
     st.metric("Consumo Total (TJ)", f"{consumo_total:.2f}")
     st.metric("Emissões Totais de CO₂ (toneladas)", f"{emissoes_total:.2f}")
-
     st.markdown(f"- **Média de Consumo de Energia (TJ):** {media_consumo:.2f}")
     st.markdown(f"- **Maior Consumo Registrado (TJ):** {max_consumo:.2f}")
     st.markdown(f"- **Menor Consumo Registrado (TJ):** {min_consumo:.2f}")
 
-    # Gráfico: Consumo vs Emissões
-    st.subheader("Comparativo entre Consumo e Emissões")
-    st.markdown("O gráfico abaixo mostra, de forma comparativa, o total de energia consumida (em Terajoules) e o total de CO₂ emitido (em toneladas). Isso permite entender a relação direta entre consumo energético e impacto ambiental. Quanto maior o consumo, maior tende a ser a emissão de poluentes.\n\nPara ilustrar melhor: **uma única tonelada de CO₂ equivale a uma viagem de carro de aproximadamente 5.000 km**. Ou seja, se um município emitir 10.000 toneladas de CO₂, isso seria como se 10.000 carros viajassem de São Paulo ao Recife sem parar. Essa comparação reforça a urgência de reduzir as emissões, especialmente substituindo fontes de energia poluentes por fontes limpas como a solar.")
+    # Conversões explicativas
+    casas_equivalentes = consumo_total / 0.00000864
+    carros_equivalentes = emissoes_total / 2
 
-    dados_totais = pd.DataFrame({
-        "Indicador": ["Energia Consumida (TJ)", "Emissões de CO₂ (toneladas)"],
-        "Valor": [consumo_total, emissoes_total]
-    })
-
-    chart = alt.Chart(dados_totais).mark_bar().encode(
-        x=alt.X("Indicador:N", title="Indicador"),
-        y=alt.Y("Valor:Q", title="Valor Total"),
-        tooltip=["Indicador", "Valor"]
-    ).properties(
-        title="Comparativo Total entre Consumo de Energia e Emissões de CO₂"
+    st.markdown("### 🌍 Impacto Ambiental em Termos Reais")
+    st.markdown(
+        f"- O consumo total equivale à energia gasta por cerca de **{casas_equivalentes:,.0f} residências** brasileiras em 1 ano.\n"
+        f"- As emissões de CO₂ correspondem ao que seria emitido por aproximadamente **{carros_equivalentes:,.0f} carros** rodando durante um ano."
     )
-    st.altair_chart(chart, use_container_width=True)
 
-    # Estimativa de Substituição por Energia Solar
-    st.subheader("Simulação de Geração com Energia Solar")
+    # Simulação solar
+    st.subheader("☀️ Simulação de Geração com Energia Solar")
     percentual_solar = st.slider(
         "Qual percentual do consumo atual você gostaria de substituir por energia solar?",
-        0, 100, 30, help="Essa simulação calcula a economia e a redução de CO₂ ao gerar parte da energia com painéis solares."
+        0, 100, 30,
+        help="Essa simulação calcula a economia e a redução de CO₂ ao gerar parte da energia com painéis solares."
     )
+
     consumo_solar = consumo_total * (percentual_solar / 100)
-    energia_kwh = consumo_solar * 277778  # 1 TJ = 277.778 kWh
-    preco_kwh_solar = 0.35  # valor médio estimado
+    energia_kwh = consumo_solar * 277778
+    preco_kwh_solar = 0.22
     economia_financeira = energia_kwh * preco_kwh_solar
     reducao_co2 = consumo_solar * (emissoes_total / consumo_total)
 
@@ -104,6 +101,41 @@ if not df_filtrado.empty:
     st.info(
         "Esses valores simulam o impacto positivo da energia solar: menor dependência da rede elétrica, economia nas contas de luz e contribuição direta com o meio ambiente."
     )
+
+    # ✅ Gráficos com base nos dados filtrados agrupados por ano
+    st.subheader("📈 Evolução do Consumo e Emissões por Ano (com base nos filtros)")
+
+    evolucao_filtrada = df_filtrado.groupby("ano")[["energia (TJ)", "emissoes de co2"]].sum().sort_index().reset_index()
+
+    if evolucao_filtrada.empty:
+        st.info("Não há dados suficientes para gerar os gráficos com os filtros aplicados.")
+    else:
+        chart_energia = alt.Chart(evolucao_filtrada).mark_line(point=True, color="#1f77b4").encode(
+            x=alt.X("ano:O", title="Ano"),
+            y=alt.Y("energia (TJ):Q", title="Energia Consumida (TJ)"),
+            tooltip=["ano", "energia (TJ)"]
+        ).properties(title="Evolução do Consumo de Energia")
+
+        chart_emissao = alt.Chart(evolucao_filtrada).mark_line(point=True, color="#ff7f0e").encode(
+            x=alt.X("ano:O", title="Ano"),
+            y=alt.Y("emissoes de co2:Q", title="Emissões de CO₂ (toneladas)"),
+            tooltip=["ano", "emissoes de co2"]
+        ).properties(title="Evolução das Emissões de CO₂")
+
+        st.altair_chart(chart_energia, use_container_width=True)
+        st.altair_chart(chart_emissao, use_container_width=True)
+
+    # Ranking por categoria
+    st.subheader("🏭 Categorias que Mais Consomem Energia")
+    ranking_categoria = df_filtrado.groupby("categoria de atividade")["energia (TJ)"].sum().sort_values(ascending=False).head(10).reset_index()
+
+    barras = alt.Chart(ranking_categoria).mark_bar().encode(
+        x=alt.X("energia (TJ):Q", title="Consumo de Energia (TJ)"),
+        y=alt.Y("categoria de atividade:N", sort='-x', title="Categoria"),
+        tooltip=["categoria de atividade", "energia (TJ)"]
+    ).properties(title="Top 10 Categorias com Maior Consumo de Energia")
+
+    st.altair_chart(barras, use_container_width=True)
 
 else:
     st.warning("Nenhum dado encontrado para os filtros aplicados.")
