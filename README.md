@@ -44,4 +44,4 @@ Criar um painel interativo que permita:
 
 5. Execute a aplicação
    ```
-   streamlit run painel.py
+   streamlit run filtrar.py
