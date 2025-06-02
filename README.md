@@ -30,14 +30,18 @@ Criar um painel interativo que permita:
    cd upx-energia-renovavel
 
 2. Crie um ambiente virtual
-   ```python -m venv venv
+   ```
+   python -m venv venv
    
 3. Ative o ambiente Virtual
-   ```Windows: venv\\Scripts\\activate
+   ```
+   Windows: venv\\Scripts\\activate
    Linux/Mac: source venv/bin/activate
 
 4. Instale as dependências
-   ```pip install -r requirements.txt
+   ```
+   pip install -r requirements.txt
 
 5. Execute a aplicação
-   ```streamlit run painel.py
+   ```
+   streamlit run painel.py
